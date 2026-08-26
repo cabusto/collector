@@ -13,10 +13,11 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Numeric, cast, func
 from sqlmodel import Session, col, select
 
-from .auth import get_account_id
+from .auth import resolve_account
 from .config import settings
-from .db import create_db, engine, get_session
-from .models import ApiKey, Charge
+from .db import create_db, get_session
+from .keys import router as keys_router
+from .models import Charge
 
 logging.basicConfig(
     level=logging.INFO,
@@ -110,28 +111,17 @@ def _build_charge(
 
 
 def _seed_api_keys() -> None:
-    raw = settings.COLLECTOR_API_KEYS.strip()
-    if not raw:
-        return
-    with Session(engine) as session:
-        for pair in raw.split(","):
-            pair = pair.strip()
-            if ":" not in pair:
-                continue
-            k, acct = pair.split(":", 1)
-            if not session.get(ApiKey, k.strip()):
-                session.add(ApiKey(key=k.strip(), account_id=acct.strip()))
-        session.commit()
+    pass  # env-var keys are resolved inline in resolve_account; no DB seeding needed
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     create_db()
-    _seed_api_keys()
     yield
 
 
 app = FastAPI(title="Charge Collector", version="0", lifespan=lifespan)
+app.include_router(keys_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS.split(","),
@@ -148,7 +138,7 @@ def healthz():
 @app.post("/v1/charges")
 async def ingest(
     request: Request,
-    account_id: str = Depends(get_account_id),
+    account_id: str = Depends(resolve_account),
     session: Session = Depends(get_session),
 ):
     try:
@@ -194,7 +184,7 @@ async def ingest(
 
 @app.get("/v1/charges")
 def list_charges(
-    account_id: str = Depends(get_account_id),
+    account_id: str = Depends(resolve_account),
     session: Session = Depends(get_session),
     agent_ref: Optional[str] = Query(default=None),
     seller_ref: Optional[str] = Query(default=None),
@@ -247,7 +237,7 @@ def list_charges(
 
 @app.get("/v1/charges/summary")
 def summary(
-    account_id: str = Depends(get_account_id),
+    account_id: str = Depends(resolve_account),
     session: Session = Depends(get_session),
     group_by: str = Query(..., pattern="^(seller_ref|agent_ref|status|tool|day)$"),
     from_: Optional[datetime] = Query(default=None, alias="from"),

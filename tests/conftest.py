@@ -3,6 +3,7 @@ import os
 # Must be set before any collector imports so db.py picks up the in-memory URL
 os.environ.setdefault("DATABASE_URL", "sqlite://")
 os.environ.setdefault("COLLECTOR_API_KEYS", "key1:acct1,key2:acct2")
+os.environ.setdefault("COLLECTOR_ADMIN_TOKEN", "test-admin-token")
 
 import sqlmodel
 import pytest

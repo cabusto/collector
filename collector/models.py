@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from sqlalchemy import JSON as SAJSON
@@ -36,6 +36,14 @@ class Charge(SQLModel, table=True):
 class ApiKey(SQLModel, table=True):
     __tablename__ = "api_keys"
 
-    key: str = Field(primary_key=True)
-    account_id: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    id: str = Field(primary_key=True)
+    account_id: str = Field(index=True)
+    name: str = Field(default="")
+    prefix: str = Field(default="")
+    # SHA-256 of the raw key — plaintext is never stored
+    key_hash: str = Field(index=True)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    last_used_at: Optional[datetime] = Field(default=None)
+    revoked_at: Optional[datetime] = Field(default=None)
