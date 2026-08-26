@@ -10,3 +10,4 @@ dist/
 *.egg-info/
 .pytest_cache/
 .vercel
+supertab-portal-build-spec.md
