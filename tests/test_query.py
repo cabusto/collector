@@ -2,10 +2,14 @@ from tests.conftest import AUTH1, SAMPLE
 
 
 def test_filter_by_status(client):
-    client.post("/v1/charges", json=[
-        {**SAMPLE, "id": "q_ok", "status": "recorded"},
-        {**SAMPLE, "id": "q_err", "status": "error"},
-    ], headers=AUTH1)
+    client.post(
+        "/v1/charges",
+        json=[
+            {**SAMPLE, "id": "q_ok", "status": "recorded"},
+            {**SAMPLE, "id": "q_err", "status": "error"},
+        ],
+        headers=AUTH1,
+    )
 
     items = client.get("/v1/charges?status=recorded", headers=AUTH1).json()["items"]
     assert all(i["status"] == "recorded" for i in items)
@@ -13,21 +17,31 @@ def test_filter_by_status(client):
 
 
 def test_filter_by_seller_ref(client):
-    client.post("/v1/charges", json=[
-        {**SAMPLE, "id": "q_s1", "seller_ref": "api.a.com"},
-        {**SAMPLE, "id": "q_s2", "seller_ref": "api.b.com"},
-    ], headers=AUTH1)
+    client.post(
+        "/v1/charges",
+        json=[
+            {**SAMPLE, "id": "q_s1", "seller_ref": "api.a.com"},
+            {**SAMPLE, "id": "q_s2", "seller_ref": "api.b.com"},
+        ],
+        headers=AUTH1,
+    )
 
-    items = client.get("/v1/charges?seller_ref=api.a.com", headers=AUTH1).json()["items"]
+    items = client.get("/v1/charges?seller_ref=api.a.com", headers=AUTH1).json()[
+        "items"
+    ]
     assert len(items) == 1
     assert items[0]["seller_ref"] == "api.a.com"
 
 
 def test_filter_by_agent_ref(client):
-    client.post("/v1/charges", json=[
-        {**SAMPLE, "id": "q_a1", "agent_ref": "bot-alpha"},
-        {**SAMPLE, "id": "q_a2", "agent_ref": "bot-beta"},
-    ], headers=AUTH1)
+    client.post(
+        "/v1/charges",
+        json=[
+            {**SAMPLE, "id": "q_a1", "agent_ref": "bot-alpha"},
+            {**SAMPLE, "id": "q_a2", "agent_ref": "bot-beta"},
+        ],
+        headers=AUTH1,
+    )
 
     items = client.get("/v1/charges?agent_ref=bot-alpha", headers=AUTH1).json()["items"]
     assert len(items) == 1
@@ -35,11 +49,15 @@ def test_filter_by_agent_ref(client):
 
 
 def test_filter_by_time_range(client):
-    client.post("/v1/charges", json=[
-        {**SAMPLE, "id": "q_t1", "ts": "2026-01-15T00:00:00Z"},
-        {**SAMPLE, "id": "q_t2", "ts": "2026-05-15T00:00:00Z"},
-        {**SAMPLE, "id": "q_t3", "ts": "2026-09-15T00:00:00Z"},
-    ], headers=AUTH1)
+    client.post(
+        "/v1/charges",
+        json=[
+            {**SAMPLE, "id": "q_t1", "ts": "2026-01-15T00:00:00Z"},
+            {**SAMPLE, "id": "q_t2", "ts": "2026-05-15T00:00:00Z"},
+            {**SAMPLE, "id": "q_t3", "ts": "2026-09-15T00:00:00Z"},
+        ],
+        headers=AUTH1,
+    )
 
     items = client.get(
         "/v1/charges?from=2026-03-01T00:00:00Z&to=2026-07-01T00:00:00Z",
@@ -62,7 +80,9 @@ def test_pagination_cursor(client):
     assert len(r1["items"]) == 3
     assert r1["next_cursor"] is not None
 
-    r2 = client.get(f"/v1/charges?limit=3&cursor={r1['next_cursor']}", headers=AUTH1).json()
+    r2 = client.get(
+        f"/v1/charges?limit=3&cursor={r1['next_cursor']}", headers=AUTH1
+    ).json()
     assert len(r2["items"]) == 2
     assert r2["next_cursor"] is None
 

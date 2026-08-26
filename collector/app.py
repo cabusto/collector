@@ -24,10 +24,23 @@ logging.basicConfig(
 )
 logger = logging.getLogger("collector")
 
-_KNOWN_FIELDS = frozenset({
-    "id", "ts", "tool", "status", "seller_ref", "agent_ref", "resource",
-    "rail", "http_status", "amount_usd", "currency", "duration_ms", "metadata",
-})
+_KNOWN_FIELDS = frozenset(
+    {
+        "id",
+        "ts",
+        "tool",
+        "status",
+        "seller_ref",
+        "agent_ref",
+        "resource",
+        "rail",
+        "http_status",
+        "amount_usd",
+        "currency",
+        "duration_ms",
+        "metadata",
+    }
+)
 _MAX_STR_BYTES = 8 * 1024
 
 
@@ -71,7 +84,9 @@ def _charge_dict(c: Charge) -> dict:
     return d
 
 
-def _build_charge(validated: ChargeIn, raw_payload: dict, account_id: str, now: datetime) -> Charge:
+def _build_charge(
+    validated: ChargeIn, raw_payload: dict, account_id: str, now: datetime
+) -> Charge:
     extra = validated.model_extra or {}
     merged_meta = {**(validated.metadata or {}), **extra}
     return Charge(
@@ -147,7 +162,9 @@ async def ingest(
     charges: list[Charge] = []
     for raw_item in raw_items:
         if not isinstance(raw_item, dict):
-            raise HTTPException(status_code=400, detail="Each charge must be a JSON object")
+            raise HTTPException(
+                status_code=400, detail="Each charge must be a JSON object"
+            )
         try:
             validated = ChargeIn.model_validate(raw_item)
         except Exception as exc:

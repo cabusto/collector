@@ -30,9 +30,7 @@ class Charge(SQLModel, table=True):
     extra_metadata: Optional[dict[str, Any]] = Field(
         default=None, sa_column=Column("metadata", SAJSON)
     )
-    raw: Optional[dict[str, Any]] = Field(
-        default=None, sa_column=Column("raw", SAJSON)
-    )
+    raw: Optional[dict[str, Any]] = Field(default=None, sa_column=Column("raw", SAJSON))
 
 
 class ApiKey(SQLModel, table=True):
