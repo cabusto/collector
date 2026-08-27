@@ -10,7 +10,7 @@ from typing import Any, Optional
 from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
-from sqlalchemy import Numeric, cast, func
+from sqlalchemy import Numeric, case, cast, func
 from sqlmodel import Session, col, select
 
 from .auth import resolve_account
@@ -257,11 +257,23 @@ def summary(
 
     key_expr = raw_key.label("key_val")
     cnt_expr = func.count(Charge.id).label("cnt")
+    failure_expr = func.sum(case((col(Charge.status) != "recorded", 1), else_=0)).label(
+        "failed"
+    )
+    timed_count_expr = func.count(Charge.duration_ms).label("timed_cnt")
+    avg_duration_expr = func.avg(Charge.duration_ms).label("avg_duration_ms")
     # Cast string to numeric for exact decimal summation
     sum_expr = func.sum(cast(Charge.amount_usd, Numeric(20, 8))).label("total")
 
     stmt = (
-        select(key_expr, cnt_expr, sum_expr)
+        select(
+            key_expr,
+            cnt_expr,
+            failure_expr,
+            timed_count_expr,
+            avg_duration_expr,
+            sum_expr,
+        )
         .where(col(Charge.account_id) == account_id)
         .group_by(raw_key)
         .order_by(sum_expr.desc().nulls_last())
@@ -280,6 +292,12 @@ def summary(
         {
             "key": str(row.key_val) if row.key_val is not None else None,
             "count": row.cnt,
+            "failure_count": int(row.failed or 0),
+            "failure_rate": (int(row.failed or 0) / row.cnt) if row.cnt else 0,
+            "timed_count": int(row.timed_cnt or 0),
+            "avg_duration_ms": float(row.avg_duration_ms)
+            if row.avg_duration_ms is not None
+            else None,
             "amount_usd": _fmt_decimal(row.total),
         }
         for row in rows

@@ -91,3 +91,50 @@ def test_summary_sorted_by_amount_desc(client):
     rows = client.get("/v1/charges/summary?group_by=seller_ref", headers=AUTH1).json()
     assert rows[0]["key"] == "expensive.com"
     assert rows[1]["key"] == "cheap.com"
+
+
+def test_summary_includes_failure_and_latency_metrics(client):
+    client.post(
+        "/v1/charges",
+        json=[
+            {
+                **SAMPLE,
+                "id": "su_perf1",
+                "seller_ref": "slow-fail.com",
+                "status": "failed",
+                "duration_ms": 1200,
+                "amount_usd": "2.00000000",
+            },
+            {
+                **SAMPLE,
+                "id": "su_perf2",
+                "seller_ref": "slow-fail.com",
+                "status": "recorded",
+                "duration_ms": 800,
+                "amount_usd": "1.00000000",
+            },
+            {
+                **SAMPLE,
+                "id": "su_perf3",
+                "seller_ref": "healthy.com",
+                "status": "recorded",
+                "duration_ms": 100,
+                "amount_usd": "5.00000000",
+            },
+        ],
+        headers=AUTH1,
+    )
+
+    rows = {
+        r["key"]: r
+        for r in client.get(
+            "/v1/charges/summary?group_by=seller_ref", headers=AUTH1
+        ).json()
+    }
+
+    assert rows["slow-fail.com"]["failure_count"] == 1
+    assert rows["slow-fail.com"]["failure_rate"] == 0.5
+    assert rows["slow-fail.com"]["timed_count"] == 2
+    assert rows["slow-fail.com"]["avg_duration_ms"] == 1000.0
+    assert rows["healthy.com"]["failure_count"] == 0
+    assert rows["healthy.com"]["failure_rate"] == 0
