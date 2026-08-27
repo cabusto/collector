@@ -22,6 +22,10 @@ export interface ChargesResponse {
 export interface SummaryRow {
   key: string;
   count: number;
+  failure_count: number;
+  failure_rate: number;
+  timed_count: number;
+  avg_duration_ms: number | null;
   amount_usd: string;
 }
 
