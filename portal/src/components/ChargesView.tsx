@@ -56,35 +56,10 @@ export function ChargesView() {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 rounded-[1.75rem] border border-border/80 bg-card/95 p-6 shadow-sm lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="border-primary/20 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-primary">
-              Enterprise spend monitoring
-            </Badge>
-            <Badge variant="outline" className="border-border bg-background px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-              Finance + engineering
-            </Badge>
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              Spend and seller performance
-            </h1>
-            <p className="max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">
-              Surface top expenses, isolate weak sellers, and understand which agents are driving spend before you take action.
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-          <div className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.16em]">Priority</p>
-            <p className="mt-1 text-sm font-medium text-foreground">Top spend and seller health</p>
-          </div>
-          <div className="rounded-2xl border border-border/70 bg-background/70 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.16em]">Outcome</p>
-            <p className="mt-1 text-sm font-medium text-foreground">Block, negotiate, or investigate</p>
-          </div>
-        </div>
+      <section className="rounded-[1.75rem] border border-border/80 bg-card/95 p-6 shadow-sm">
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          Spend and seller performance
+        </h1>
       </section>
 
       <FilterBar
@@ -105,69 +80,28 @@ export function ChargesView() {
       <ChartsSection range={filters.range} onApplyFocus={applyFocus} />
 
       <section className="rounded-[1.75rem] border border-border/80 bg-card/95 p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="border-primary/15 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-primary">
-                Investigation workspace
-              </Badge>
-              {activeFilters.length > 0 ? (
-                <Badge variant="outline" className="border-border bg-background px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-                  {activeFilters.length} active filter{activeFilters.length === 1 ? "" : "s"}
-                </Badge>
-              ) : null}
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight text-foreground">
-                Investigate the evidence
-              </h2>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                Start with the recommended actions above, then narrow the underlying charges here when you need proof, vendor detail, or agent-level context.
-              </p>
-            </div>
-          </div>
-
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">Recent charges</h2>
           {activeFilters.length > 0 ? (
             <Button variant="outline" onClick={resetFilters}>
-              Clear investigation
+              Clear filters
             </Button>
           ) : null}
         </div>
 
         {activeFilters.length > 0 ? (
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap gap-2">
             {activeFilters.map((item) => (
-              <Badge key={item.label} variant="outline" className="border-border bg-background px-3 py-1 text-sm text-foreground">
+              <Badge
+                key={item.label}
+                variant="outline"
+                className="border-border bg-background px-3 py-1 text-sm text-foreground"
+              >
                 {item.label}
               </Badge>
             ))}
           </div>
         ) : null}
-
-        <div className="mt-5">
-          <FilterBar
-            filters={draftFilters}
-            onChange={setDraftFilters}
-            onApply={applyFilters}
-            onReset={resetFilters}
-            onRefresh={refresh}
-            isDirty={filtersDirty}
-          />
-        </div>
-      </section>
-
-      <section className="rounded-[1.75rem] border border-border/80 bg-card/95 p-5 shadow-sm">
-        <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight text-foreground">Charge-level evidence</h2>
-            <p className="text-sm text-muted-foreground">
-              Review raw charge events after the dashboard has helped you decide where to look.
-            </p>
-          </div>
-          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            Newest activity and matched filters
-          </p>
-        </div>
 
         <ChargesTable
           charges={charges}

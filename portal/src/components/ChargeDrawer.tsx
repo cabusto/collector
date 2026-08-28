@@ -28,26 +28,21 @@ function DetailBlock({
       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
         {label}
       </p>
-      <p className="text-sm font-medium text-foreground break-words">{value}</p>
+      <p className="wrap-break-word text-sm font-medium text-foreground">{value}</p>
     </div>
   );
 }
 
 function Section({
   title,
-  description,
   children,
 }: {
   title: string;
-  description?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="space-y-3">
-      <div>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
-      </div>
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       {children}
     </section>
   );
@@ -77,15 +72,9 @@ export function ChargeDrawer({ charge, onClose }: ChargeDrawerProps) {
           <DrawerTitle className="mt-3 text-base font-semibold tracking-tight text-foreground">
             {charge?.seller_ref || charge?.agent_ref || charge?.tool || "Charge detail"}
           </DrawerTitle>
-          <p className="text-sm text-muted-foreground">
-            Structured detail first, raw payload second.
-          </p>
         </DrawerHeader>
         <div className="space-y-6 overflow-y-auto px-4 pb-6">
-          <Section
-            title="Overview"
-            description="Use this summary to confirm whether the charge matches the seller, agent, and status you are investigating."
-          >
+          <Section title="Overview">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <DetailBlock label="Seller" value={charge?.seller_ref ?? "Unassigned"} />
               <DetailBlock label="Agent" value={charge?.agent_ref ?? "Unassigned"} />
@@ -94,10 +83,7 @@ export function ChargeDrawer({ charge, onClose }: ChargeDrawerProps) {
             </div>
           </Section>
 
-          <Section
-            title="Spend and routing"
-            description="These fields explain where money moved and what external path the call took."
-          >
+          <Section title="Spend and routing">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <DetailBlock label="Amount" value={formatUsd(charge?.amount_usd)} />
               <DetailBlock label="Currency" value={charge?.currency ?? "USD"} />
@@ -106,25 +92,25 @@ export function ChargeDrawer({ charge, onClose }: ChargeDrawerProps) {
             </div>
           </Section>
 
-          <Section
-            title="Performance"
-            description="Use these signals when a seller is failing often or slowing agent workflows."
-          >
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <Section title="Performance">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <DetailBlock
                 label="Duration"
-                value={charge?.duration_ms != null ? `${Math.round(charge.duration_ms).toLocaleString("en-US")} ms` : "Not captured"}
+                value={
+                  charge?.duration_ms != null
+                    ? `${Math.round(charge.duration_ms).toLocaleString("en-US")} ms`
+                    : "Not captured"
+                }
               />
-              <DetailBlock label="HTTP status" value={charge?.http_status != null ? String(charge.http_status) : "Not captured"} />
-              <DetailBlock label="Charge id" value={charge?.id ?? "Unknown"} />
-              <DetailBlock label="Recorded at" value={formatDate(charge?.ts)} />
+              <DetailBlock
+                label="HTTP status"
+                value={charge?.http_status != null ? String(charge.http_status) : "Not captured"}
+              />
+              <DetailBlock label="ID" value={charge?.id ?? "Unknown"} />
             </div>
           </Section>
 
-          <Section
-            title="Metadata"
-            description="Only the fields present on this event are shown here so the important context is easy to scan."
-          >
+          <Section title="Metadata">
             {metadataEntries.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 {metadataEntries.map(([key, value]) => (
@@ -137,7 +123,7 @@ export function ChargeDrawer({ charge, onClose }: ChargeDrawerProps) {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-border bg-background/70 px-4 py-5 text-sm text-muted-foreground">
-                No metadata was captured for this event.
+                No metadata.
               </div>
             )}
           </Section>

@@ -29,29 +29,32 @@ interface FilterBarProps {
   isDirty: boolean;
 }
 
-export function FilterBar({ filters, onChange, onApply, onReset, onRefresh, isDirty }: FilterBarProps) {
+export function FilterBar({
+  filters,
+  onChange,
+  onApply,
+  onReset,
+  onRefresh,
+  isDirty,
+}: FilterBarProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   function set<K extends keyof ChargeFilters>(key: K, value: ChargeFilters[K]) {
     onChange({ ...filters, [key]: value });
   }
 
-  const advancedFilterCount = [filters.tool, filters.agent_ref, filters.seller_ref].filter(Boolean).length;
+  const advancedFilterCount = [filters.tool, filters.agent_ref, filters.seller_ref].filter(Boolean)
+    .length;
 
   return (
-    <section className="rounded-3xl border border-border/70 bg-background/60 p-4">
+    <section className="rounded-[1.75rem] border border-border/80 bg-card/95 p-5 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Quick filters
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Start with the narrowest useful choices. Open advanced filters only when the dashboard points you to a specific seller, agent, or tool.
-            </p>
-          </div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Filters
+          </p>
 
-          <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex flex-wrap items-end gap-3">
             <div className="flex overflow-hidden rounded-full border border-border bg-card shadow-sm">
               {DATE_OPTIONS.map(({ label, value }) => (
                 <button
@@ -70,7 +73,7 @@ export function FilterBar({ filters, onChange, onApply, onReset, onRefresh, isDi
 
             <div className="flex flex-col gap-1">
               <Label className="text-xs font-medium">Status</Label>
-              <Select value={filters.status} onValueChange={(v) => set("status", v ?? "")}>
+              <Select value={filters.status} onValueChange={(v) => set("status", v ?? "") }>
                 <SelectTrigger className="h-10 w-40 bg-card">
                   <SelectValue placeholder="All" />
                 </SelectTrigger>
@@ -90,7 +93,7 @@ export function FilterBar({ filters, onChange, onApply, onReset, onRefresh, isDi
               size="default"
               onClick={() => setShowAdvanced((current) => !current)}
             >
-              {showAdvanced ? "Hide advanced filters" : "Show advanced filters"}
+              {showAdvanced ? "Hide filters" : "More filters"}
               {advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ""}
             </Button>
           </div>
@@ -111,14 +114,9 @@ export function FilterBar({ filters, onChange, onApply, onReset, onRefresh, isDi
 
       {showAdvanced ? (
         <div className="mt-4 border-t border-border/70 pt-4">
-          <div className="mb-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Advanced filters
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Use these only when you already know the seller, agent, or tool you need to isolate.
-            </p>
-          </div>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            More filters
+          </p>
 
           <div className="flex flex-wrap gap-3">
             {(["tool", "agent_ref", "seller_ref"] as const).map((key) => (

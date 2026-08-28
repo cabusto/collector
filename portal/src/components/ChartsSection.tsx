@@ -12,7 +12,7 @@ import {
   Line,
   ResponsiveContainer,
 } from "recharts";
-import { AlertTriangle, Bot, Building2, ChevronRight, TimerReset, Wallet } from "lucide-react";
+import { AlertTriangle, Bot, Building2, TimerReset, Wallet } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -77,10 +77,13 @@ function getWorstFailureSeller(rows: SummaryRow[] | undefined) {
 function getSlowestSeller(rows: SummaryRow[] | undefined) {
   if (!rows) return null;
   const ranked = rows
-    .filter((row) => row.key && row.timed_count >= SELLER_VOLUME_THRESHOLD && row.avg_duration_ms != null)
+    .filter(
+      (row) => row.key && row.timed_count >= SELLER_VOLUME_THRESHOLD && row.avg_duration_ms != null
+    )
     .sort(
       (left, right) =>
-        (right.avg_duration_ms ?? 0) - (left.avg_duration_ms ?? 0) || right.timed_count - left.timed_count
+        (right.avg_duration_ms ?? 0) - (left.avg_duration_ms ?? 0) ||
+        right.timed_count - left.timed_count
     );
   return ranked[0] ?? null;
 }
@@ -110,7 +113,11 @@ function ChartCard({
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
-          {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
+          {subtitle ? (
+            <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              {subtitle}
+            </p>
+          ) : null}
         </div>
         {action}
       </div>
@@ -130,7 +137,7 @@ function SummaryCard({
   title: string;
   value: string;
   supporting: string;
-  footnote: string;
+  footnote?: string;
   tone?: "default" | "critical";
   icon: React.ReactNode;
 }) {
@@ -144,7 +151,9 @@ function SummaryCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{title}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {title}
+          </p>
           <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
         </div>
         <div
@@ -158,23 +167,21 @@ function SummaryCard({
         </div>
       </div>
       <p className="mt-3 text-sm font-medium text-foreground">{supporting}</p>
-      <p className="mt-1 text-sm text-muted-foreground">{footnote}</p>
+      {footnote ? <p className="mt-1 text-sm text-muted-foreground">{footnote}</p> : null}
     </section>
   );
 }
 
 function ActionCard({
-  eyebrow,
   title,
-  description,
+  value,
   metric,
   actionLabel,
   onAction,
   tone = "default",
 }: {
-  eyebrow: string;
   title: string;
-  description: string;
+  value: string;
   metric: string;
   actionLabel: string;
   onAction?: () => void;
@@ -189,12 +196,16 @@ function ActionCard({
       }
     >
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        {eyebrow}
+        {title}
       </p>
-      <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
-      <p className="mt-4 text-sm font-medium text-foreground">{metric}</p>
-      <Button className="mt-5" variant={tone === "critical" ? "destructive" : "default"} onClick={onAction} disabled={!onAction}>
+      <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">{value}</h3>
+      <p className="mt-3 text-sm font-medium text-foreground">{metric}</p>
+      <Button
+        className="mt-5"
+        variant={tone === "critical" ? "destructive" : "default"}
+        onClick={onAction}
+        disabled={!onAction}
+      >
         {actionLabel}
       </Button>
     </section>
@@ -211,7 +222,10 @@ function RankedList({
   onFocusSeller?: (patch: Partial<ChargeFilters>) => void;
 }) {
   const sortedRows = [...rows]
-    .filter((row) => row.key && (mode === "failure" ? row.count >= SELLER_VOLUME_THRESHOLD : row.timed_count >= SELLER_VOLUME_THRESHOLD))
+    .filter((row) =>
+      row.key &&
+      (mode === "failure" ? row.count >= SELLER_VOLUME_THRESHOLD : row.timed_count >= SELLER_VOLUME_THRESHOLD)
+    )
     .sort((left, right) => {
       if (mode === "failure") {
         return right.failure_rate - left.failure_rate || right.count - left.count;
@@ -223,7 +237,9 @@ function RankedList({
   if (sortedRows.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-border bg-background/70 px-4 py-5 text-sm text-muted-foreground">
-        Need at least {SELLER_VOLUME_THRESHOLD} seller events in the selected range to rank {mode === "failure" ? "failure rate" : "response time"}.
+        {mode === "failure"
+          ? `Minimum ${SELLER_VOLUME_THRESHOLD} calls.`
+          : `Minimum ${SELLER_VOLUME_THRESHOLD} timed calls.`}
       </div>
     );
   }
@@ -231,7 +247,10 @@ function RankedList({
   return (
     <div className="space-y-3">
       {sortedRows.map((row, index) => (
-        <div key={`${mode}-${row.key}`} className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/60 px-4 py-3">
+        <div
+          key={`${mode}-${row.key}`}
+          className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/60 px-4 py-3"
+        >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
             {index + 1}
           </div>
@@ -316,23 +335,6 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
       )}
 
       <section className="rounded-[1.75rem] border border-border/80 bg-card/95 p-6 shadow-sm">
-        <div className="mb-5 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Action center
-            </p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-              Start with what deserves action now
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              The page now leads with framed choices: biggest spend concentration first, then the sellers most likely to create financial or operational loss.
-            </p>
-          </div>
-          <Badge variant="outline" className="border-border bg-background px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-            Anchoring + framing + chunking
-          </Badge>
-        </div>
-
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
           {summaryLoading ? (
             Array.from({ length: 3 }).map((_, index) => (
@@ -341,25 +343,29 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
           ) : (
             <>
               <ActionCard
-                eyebrow="Cost concentration"
-                title={topSeller?.key ?? "No dominant seller yet"}
-                description="Anchor the review on the seller taking the largest share of recorded spend. This is the fastest path to rate negotiation or vendor review."
+                title="Top seller"
+                value={topSeller?.key ?? "No seller data"}
                 metric={
                   topSeller
-                    ? `${formatUsd(topSeller.amount_usd)}${topSellerShare != null ? ` • ${formatPercent(topSellerShare)} of spend` : ""}`
-                    : "No recorded spend in the selected range"
+                    ? `${formatUsd(topSeller.amount_usd)}${
+                        topSellerShare != null ? ` • ${formatPercent(topSellerShare)} of spend` : ""
+                      }`
+                    : "No recorded spend"
                 }
-                actionLabel="Review seller charges"
-                onAction={topSeller?.key ? () => onApplyFocus({ seller_ref: topSeller.key, status: "" }) : undefined}
+                actionLabel="View charges"
+                onAction={
+                  topSeller?.key ? () => onApplyFocus({ seller_ref: topSeller.key, status: "" }) : undefined
+                }
               />
               <ActionCard
-                eyebrow="Reliability risk"
-                title={worstFailureSeller?.key ?? "Need more seller volume"}
-                description="Frame failure as a loss to avoid. Investigate sellers with the highest failure rate before they distort spend and agent outcomes."
+                title="Highest failure rate"
+                value={worstFailureSeller?.key ?? "No seller data"}
                 metric={
                   worstFailureSeller
-                    ? `${formatPercent(worstFailureSeller.failure_rate)} failure rate • ${formatCount(worstFailureSeller.failure_count)} failed calls`
-                    : `At least ${SELLER_VOLUME_THRESHOLD} seller events are needed to rank failure risk`
+                    ? `${formatPercent(worstFailureSeller.failure_rate)} failure rate • ${formatCount(
+                        worstFailureSeller.failure_count
+                      )} failed calls`
+                    : `Minimum ${SELLER_VOLUME_THRESHOLD} calls`
                 }
                 actionLabel="Show failed calls"
                 onAction={
@@ -370,16 +376,21 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
                 tone="critical"
               />
               <ActionCard
-                eyebrow="Performance drag"
-                title={slowestSeller?.key ?? "Need more timing data"}
-                description="Use latency as the next decision branch once failures are understood. Slow sellers quietly drain agent throughput and manager confidence."
+                title="Slowest seller"
+                value={slowestSeller?.key ?? "No seller data"}
                 metric={
                   slowestSeller
-                    ? `${formatDuration(slowestSeller.avg_duration_ms)} • ${formatCount(slowestSeller.timed_count)} timed calls`
-                    : `At least ${SELLER_VOLUME_THRESHOLD} timed calls are needed to rank latency`
+                    ? `${formatDuration(slowestSeller.avg_duration_ms)} • ${formatCount(
+                        slowestSeller.timed_count
+                      )} timed calls`
+                    : `Minimum ${SELLER_VOLUME_THRESHOLD} timed calls`
                 }
-                actionLabel="Inspect slow seller"
-                onAction={slowestSeller?.key ? () => onApplyFocus({ seller_ref: slowestSeller.key, status: "" }) : undefined}
+                actionLabel="Inspect seller"
+                onAction={
+                  slowestSeller?.key
+                    ? () => onApplyFocus({ seller_ref: slowestSeller.key, status: "" })
+                    : undefined
+                }
                 tone="critical"
               />
             </>
@@ -400,8 +411,8 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
               supporting={topSeller ? formatUsd(topSeller.amount_usd) : "No recorded spend"}
               footnote={
                 topSeller && totalSpend > 0
-                  ? `${formatPercent(Number(topSeller.amount_usd) / totalSpend)} of recorded spend in range`
-                  : "Track the largest external cost center"
+                  ? `${formatPercent(Number(topSeller.amount_usd) / totalSpend)} of recorded spend`
+                  : undefined
               }
               icon={<Building2 className="size-5" />}
             />
@@ -410,36 +421,42 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
               value={topAgent?.key ?? "No agent data"}
               supporting={topAgent ? formatUsd(topAgent.amount_usd) : "No recorded spend"}
               footnote={
-                topAgent
-                  ? `${formatCount(topAgent.count)} recorded charges in range`
-                  : "Identify which agent is driving the most spend"
+                topAgent ? `${formatCount(topAgent.count)} recorded charges` : undefined
               }
               icon={<Bot className="size-5" />}
             />
             <SummaryCard
               title="Worst seller by failure"
-              value={worstFailureSeller?.key ?? "Need more seller volume"}
+              value={worstFailureSeller?.key ?? "No seller data"}
               supporting={
                 worstFailureSeller
                   ? `${formatPercent(worstFailureSeller.failure_rate)} failure rate`
-                  : `Volume threshold: ${SELLER_VOLUME_THRESHOLD} calls`
+                  : `Minimum ${SELLER_VOLUME_THRESHOLD} calls`
               }
               footnote={
                 worstFailureSeller
-                  ? `${formatCount(worstFailureSeller.failure_count)} failures across ${formatCount(worstFailureSeller.count)} calls`
-                  : "Highlight sellers to investigate or block"
+                  ? `${formatCount(worstFailureSeller.failure_count)} failures across ${formatCount(
+                      worstFailureSeller.count
+                    )} calls`
+                  : undefined
               }
               tone="critical"
               icon={<AlertTriangle className="size-5" />}
             />
             <SummaryCard
-              title="Worst seller by response time"
-              value={slowestSeller?.key ?? "Need more timing data"}
-              supporting={slowestSeller ? formatDuration(slowestSeller.avg_duration_ms) : `Volume threshold: ${SELLER_VOLUME_THRESHOLD} timed calls`}
+              title="Slowest seller"
+              value={slowestSeller?.key ?? "No seller data"}
+              supporting={
+                slowestSeller
+                  ? formatDuration(slowestSeller.avg_duration_ms)
+                  : `Minimum ${SELLER_VOLUME_THRESHOLD} timed calls`
+              }
               footnote={
                 slowestSeller
-                  ? `${formatUsd(slowestSeller.amount_usd)} spend, ${formatCount(slowestSeller.timed_count)} timed calls`
-                  : "Identify the slowest seller to escalate"
+                  ? `${formatUsd(slowestSeller.amount_usd)} spend, ${formatCount(
+                      slowestSeller.timed_count
+                    )} timed calls`
+                  : undefined
               }
               tone="critical"
               icon={<TimerReset className="size-5" />}
@@ -451,12 +468,15 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
         <ChartCard
           title="Top sellers by spend"
-          subtitle="Ranked sellers make cost concentration obvious at a glance."
-          action={<Badge variant="outline" className="border-primary/15 bg-primary/10 px-3 py-1 text-primary">Top 8</Badge>}
+          action={
+            <Badge variant="outline" className="border-primary/15 bg-primary/10 px-3 py-1 text-primary">
+              Top 8
+            </Badge>
+          }
         >
           {sellerQ.isLoading && <Skeleton className="h-90 w-full rounded-2xl" />}
           {sellerQ.data && sellerQ.data.length === 0 && (
-            <p className="py-20 text-center text-sm text-muted-foreground">No recorded spend for the selected range.</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">No recorded spend.</p>
           )}
           {topSellers.length > 0 && (
             <ResponsiveContainer width="100%" height={360}>
@@ -498,26 +518,19 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
 
         <ChartCard
           title="Seller risk watchlist"
-          subtitle="The worst sellers by reliability and latency deserve action first."
           action={
-            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-              Volume threshold <ChevronRight className="size-3" /> {SELLER_VOLUME_THRESHOLD}
-            </span>
+            <Badge variant="outline" className="border-border bg-background px-3 py-1 text-muted-foreground">
+              Min {SELLER_VOLUME_THRESHOLD} calls
+            </Badge>
           }
         >
           <div className="grid gap-5">
             <div className="space-y-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Highest failure rates</p>
-                <p className="text-xs text-muted-foreground">Use this list to escalate or block unreliable sellers.</p>
-              </div>
+              <p className="text-sm font-semibold text-foreground">Highest failure rates</p>
               <RankedList rows={sellerHealthQ.data ?? []} mode="failure" onFocusSeller={onApplyFocus} />
             </div>
             <div className="space-y-3">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Slowest response times</p>
-                <p className="text-xs text-muted-foreground">Target sellers slowing agent execution and user-facing workflows.</p>
-              </div>
+              <p className="text-sm font-semibold text-foreground">Slowest sellers</p>
               <RankedList rows={sellerHealthQ.data ?? []} mode="latency" onFocusSeller={onApplyFocus} />
             </div>
           </div>
@@ -525,13 +538,10 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <ChartCard
-          title="Top agents by spend"
-          subtitle="See which agents are responsible for the most external spend."
-        >
+        <ChartCard title="Spend by agent">
           {agentQ.isLoading && <Skeleton className="h-80 w-full rounded-2xl" />}
           {agentQ.data && agentQ.data.length === 0 && (
-            <p className="py-20 text-center text-sm text-muted-foreground">No agent spend data for the selected range.</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">No agent spend data.</p>
           )}
           {topAgents.length > 0 && (
             <ResponsiveContainer width="100%" height={320}>
@@ -571,14 +581,10 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
           )}
         </ChartCard>
 
-        <ChartCard
-          title="Recorded spend over time"
-          subtitle="Use the trendline to see whether spend is accelerating or stabilizing."
-          action={<Wallet className="size-4 text-primary" />}
-        >
+        <ChartCard title="Spend over time" action={<Wallet className="size-4 text-primary" />}>
           {dayQ.isLoading && <Skeleton className="h-80 w-full rounded-2xl" />}
           {dayQ.data && dayQ.data.length === 0 && (
-            <p className="py-20 text-center text-sm text-muted-foreground">No daily spend data for the selected range.</p>
+            <p className="py-20 text-center text-sm text-muted-foreground">No daily spend data.</p>
           )}
           {dayQ.data && dayQ.data.length > 0 && (
             <ResponsiveContainer width="100%" height={320}>
@@ -600,7 +606,13 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
                   tickLine={false}
                 />
                 <Tooltip formatter={(value) => formatUsd(String(value))} />
-                <Line type="monotone" dataKey="amount" stroke={CHART_LINE_COLOR} dot={false} strokeWidth={3} />
+                <Line
+                  type="monotone"
+                  dataKey="amount"
+                  stroke={CHART_LINE_COLOR}
+                  dot={false}
+                  strokeWidth={3}
+                />
               </LineChart>
             </ResponsiveContainer>
           )}
