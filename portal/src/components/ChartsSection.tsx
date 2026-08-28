@@ -12,18 +12,24 @@ import {
   Line,
   ResponsiveContainer,
 } from "recharts";
-import { AlertTriangle, Bot, Building2, TimerReset, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { formatUsd } from "@/lib/utils";
 import { rangeToParams } from "@/lib/dateRange";
 import type { ChargeFilters, DateRange, SummaryRow } from "@/types/collector";
 
 const CHART_BAR_COLOR = "var(--color-chart-1)";
-const CHART_MUTED_BAR = "var(--color-chart-3)";
-const CHART_LINE_COLOR = "var(--color-chart-2)";
+const CHART_LINE_COLOR = "var(--color-chart-1)";
+const CHART_GRID_COLOR = "rgba(23, 26, 23, 0.08)";
+const CHART_CURSOR_COLOR = "rgba(18, 122, 85, 0.08)";
+const AXIS_TICK = { fontSize: 11, fill: "var(--color-muted-foreground)" };
+const VALUE_TICK = {
+  fontSize: 11,
+  fill: "var(--color-muted-foreground)",
+  fontFamily: "var(--font-geist-mono)",
+};
 const SELLER_VOLUME_THRESHOLD = 5;
 
 async function fetchSummary(params: URLSearchParams): Promise<SummaryRow[]> {
@@ -99,26 +105,17 @@ function getSpendShare(row: SummaryRow | null, totalSpend: number) {
 
 function ChartCard({
   title,
-  subtitle,
   children,
   action,
 }: {
   title: string;
-  subtitle?: string;
   children: React.ReactNode;
   action?: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-border/80 bg-card/95 p-5 shadow-sm">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-base font-semibold tracking-tight text-foreground">{title}</h3>
-          {subtitle ? (
-            <p className="mt-1 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-              {subtitle}
-            </p>
-          ) : null}
-        </div>
+    <section className="rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,18,0.04)]">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>
         {action}
       </div>
       {children}
@@ -132,42 +129,29 @@ function SummaryCard({
   supporting,
   footnote,
   tone = "default",
-  icon,
 }: {
   title: string;
   value: string;
   supporting: string;
   footnote?: string;
   tone?: "default" | "critical";
-  icon: React.ReactNode;
 }) {
   return (
     <section
       className={
         tone === "critical"
-          ? "rounded-3xl border border-destructive/20 bg-[color-mix(in_srgb,var(--destructive)_8%,white)] p-5 shadow-sm"
-          : "rounded-3xl border border-border/80 bg-card/95 p-5 shadow-sm"
+          ? "rounded-lg border border-red-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,18,0.04)]"
+          : "rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,18,0.04)]"
       }
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            {title}
-          </p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
-        </div>
-        <div
-          className={
-            tone === "critical"
-              ? "flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive"
-              : "flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary"
-          }
-        >
-          {icon}
-        </div>
-      </div>
-      <p className="mt-3 text-sm font-medium text-foreground">{supporting}</p>
-      {footnote ? <p className="mt-1 text-sm text-muted-foreground">{footnote}</p> : null}
+      <p className="text-[12px] text-muted-foreground">{title}</p>
+      <p className="mt-2 font-mono text-[28px] leading-none font-semibold tabular-nums text-foreground">
+        {value}
+      </p>
+      <p className="mt-2 text-[13px] font-medium text-foreground">{supporting}</p>
+      {footnote ? (
+        <p className="mt-1 font-mono text-[12px] tabular-nums text-muted-foreground">{footnote}</p>
+      ) : null}
     </section>
   );
 }
@@ -191,18 +175,17 @@ function ActionCard({
     <section
       className={
         tone === "critical"
-          ? "rounded-3xl border border-destructive/20 bg-[color-mix(in_srgb,var(--destructive)_8%,white)] p-5 shadow-sm"
-          : "rounded-3xl border border-border/80 bg-card/95 p-5 shadow-sm"
+          ? "rounded-md border border-red-200 bg-red-50/40 p-3"
+          : "rounded-md border border-border bg-muted/30 p-3"
       }
     >
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        {title}
-      </p>
-      <h3 className="mt-2 text-xl font-semibold tracking-tight text-foreground">{value}</h3>
-      <p className="mt-3 text-sm font-medium text-foreground">{metric}</p>
+      <p className="text-[12px] text-muted-foreground">{title}</p>
+      <h3 className="mt-1 text-[16px] font-semibold tracking-tight text-foreground">{value}</h3>
+      <p className="mt-2 font-mono text-[12px] tabular-nums text-muted-foreground">{metric}</p>
       <Button
-        className="mt-5"
+        className="mt-3"
         variant={tone === "critical" ? "destructive" : "default"}
+        size="sm"
         onClick={onAction}
         disabled={!onAction}
       >
@@ -236,7 +219,7 @@ function RankedList({
 
   if (sortedRows.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-background/70 px-4 py-5 text-sm text-muted-foreground">
+      <div className="rounded-md border border-dashed border-border bg-muted/30 px-3 py-3 text-[12px] text-muted-foreground">
         {mode === "failure"
           ? `Minimum ${SELLER_VOLUME_THRESHOLD} calls.`
           : `Minimum ${SELLER_VOLUME_THRESHOLD} timed calls.`}
@@ -245,43 +228,45 @@ function RankedList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="overflow-hidden rounded-md border border-border bg-card">
       {sortedRows.map((row, index) => (
         <div
           key={`${mode}-${row.key}`}
-          className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/60 px-4 py-3"
+          className="grid grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 px-3 py-2.5 last:border-0"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-[12px] font-medium text-muted-foreground">
             {index + 1}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-foreground">{row.key}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="truncate text-[13px] font-medium text-foreground">{row.key}</p>
+            <p className="font-mono text-[12px] tabular-nums text-muted-foreground">
               {mode === "failure"
                 ? `${formatCount(row.failure_count)} failures across ${formatCount(row.count)} calls`
                 : `${formatCount(row.timed_count)} timed calls`}
             </p>
           </div>
-          <div className="text-right">
-            <p className="font-semibold text-foreground">
-              {mode === "failure" ? formatPercent(row.failure_rate) : formatDuration(row.avg_duration_ms)}
-            </p>
-            <p className="text-xs text-muted-foreground">{formatUsd(row.amount_usd)} spend</p>
+          <div className="flex items-center gap-3">
+            <div className="text-right">
+              <p className="font-mono text-[12px] font-semibold tabular-nums text-foreground">
+                {mode === "failure" ? formatPercent(row.failure_rate) : formatDuration(row.avg_duration_ms)}
+              </p>
+              <p className="font-mono text-[12px] tabular-nums text-muted-foreground">{formatUsd(row.amount_usd)}</p>
+            </div>
+            {row.key ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  onFocusSeller?.({
+                    seller_ref: row.key,
+                    status: mode === "failure" ? "failed" : "",
+                  })
+                }
+              >
+                Inspect
+              </Button>
+            ) : null}
           </div>
-          {row.key ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                onFocusSeller?.({
-                  seller_ref: row.key,
-                  status: mode === "failure" ? "failed" : "",
-                })
-              }
-            >
-              Inspect
-            </Button>
-          ) : null}
         </div>
       ))}
     </div>
@@ -327,18 +312,21 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
   const summaryError = sellerQ.error || sellerHealthQ.error || agentQ.error || dayQ.error;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {summaryError && (
         <Alert variant="destructive">
           <AlertDescription>Failed to load dashboard summary.</AlertDescription>
         </Alert>
       )}
 
-      <section className="rounded-[1.75rem] border border-border/80 bg-card/95 p-6 shadow-sm">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+      <section className="rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,18,0.04)]">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-foreground">Action center</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
           {summaryLoading ? (
             Array.from({ length: 3 }).map((_, index) => (
-              <Skeleton key={index} className="h-52 rounded-3xl" />
+              <Skeleton key={index} className="h-36 rounded-lg" />
             ))
           ) : (
             <>
@@ -401,85 +389,77 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {summaryLoading ? (
           Array.from({ length: 4 }).map((_, index) => (
-            <Skeleton key={index} className="h-40 rounded-3xl" />
+            <Skeleton key={index} className="h-28 rounded-lg" />
           ))
         ) : (
           <>
             <SummaryCard
               title="Top seller by spend"
-              value={topSeller?.key ?? "No seller data"}
-              supporting={topSeller ? formatUsd(topSeller.amount_usd) : "No recorded spend"}
+              value={topSeller ? formatUsd(topSeller.amount_usd) : "$0.00"}
+              supporting={topSeller?.key ?? "No seller data"}
               footnote={
                 topSeller && totalSpend > 0
                   ? `${formatPercent(Number(topSeller.amount_usd) / totalSpend)} of recorded spend`
                   : undefined
               }
-              icon={<Building2 className="size-5" />}
             />
             <SummaryCard
               title="Top agent by spend"
-              value={topAgent?.key ?? "No agent data"}
-              supporting={topAgent ? formatUsd(topAgent.amount_usd) : "No recorded spend"}
+              value={topAgent ? formatUsd(topAgent.amount_usd) : "$0.00"}
+              supporting={topAgent?.key ?? "No agent data"}
               footnote={
                 topAgent ? `${formatCount(topAgent.count)} recorded charges` : undefined
               }
-              icon={<Bot className="size-5" />}
             />
             <SummaryCard
               title="Worst seller by failure"
-              value={worstFailureSeller?.key ?? "No seller data"}
+              value={worstFailureSeller ? formatPercent(worstFailureSeller.failure_rate) : "0.0%"}
               supporting={
-                worstFailureSeller
-                  ? `${formatPercent(worstFailureSeller.failure_rate)} failure rate`
-                  : `Minimum ${SELLER_VOLUME_THRESHOLD} calls`
+                worstFailureSeller?.key ?? "No seller data"
               }
               footnote={
                 worstFailureSeller
                   ? `${formatCount(worstFailureSeller.failure_count)} failures across ${formatCount(
                       worstFailureSeller.count
                     )} calls`
-                  : undefined
+                  : `Minimum ${SELLER_VOLUME_THRESHOLD} calls`
               }
               tone="critical"
-              icon={<AlertTriangle className="size-5" />}
             />
             <SummaryCard
               title="Slowest seller"
-              value={slowestSeller?.key ?? "No seller data"}
+              value={slowestSeller ? formatDuration(slowestSeller.avg_duration_ms) : "0 ms avg"}
               supporting={
-                slowestSeller
-                  ? formatDuration(slowestSeller.avg_duration_ms)
-                  : `Minimum ${SELLER_VOLUME_THRESHOLD} timed calls`
+                slowestSeller?.key ?? "No seller data"
               }
               footnote={
                 slowestSeller
                   ? `${formatUsd(slowestSeller.amount_usd)} spend, ${formatCount(
                       slowestSeller.timed_count
                     )} timed calls`
-                  : undefined
+                  : `Minimum ${SELLER_VOLUME_THRESHOLD} timed calls`
               }
               tone="critical"
-              icon={<TimerReset className="size-5" />}
             />
           </>
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.85fr)]">
         <ChartCard
           title="Top sellers by spend"
           action={
-            <Badge variant="outline" className="border-primary/15 bg-primary/10 px-3 py-1 text-primary">
+            <Badge variant="default">
               Top 8
             </Badge>
           }
         >
-          {sellerQ.isLoading && <Skeleton className="h-90 w-full rounded-2xl" />}
+          {sellerQ.isLoading && <Skeleton className="h-64 w-full rounded-lg" />}
           {sellerQ.data && sellerQ.data.length === 0 && (
             <p className="py-20 text-center text-sm text-muted-foreground">No recorded spend.</p>
           )}
           {topSellers.length > 0 && (
-            <ResponsiveContainer width="100%" height={360}>
+            <ResponsiveContainer width="100%" height={260}>
               <BarChart
                 data={topSellers.map((row) => ({
                   ...row,
@@ -487,12 +467,12 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
                   shortKey: shortenLabel(row.key),
                 }))}
                 layout="vertical"
-                margin={{ top: 4, right: 24, left: 8, bottom: 4 }}
+                margin={{ top: 2, right: 8, left: 0, bottom: 2 }}
               >
-                <CartesianGrid horizontal={false} stroke="rgba(16,42,34,0.08)" />
+                <CartesianGrid horizontal={false} stroke={CHART_GRID_COLOR} />
                 <XAxis
                   type="number"
-                  tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+                  tick={VALUE_TICK}
                   tickFormatter={(value) => formatUsd(String(value))}
                   axisLine={false}
                   tickLine={false}
@@ -501,16 +481,17 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
                   type="category"
                   dataKey="shortKey"
                   width={140}
-                  tick={{ fontSize: 12, fill: "var(--color-foreground)" }}
+                  tick={AXIS_TICK}
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip
-                  cursor={{ fill: "rgba(23,107,77,0.06)" }}
+                  cursor={{ fill: CHART_CURSOR_COLOR }}
+                  contentStyle={{ borderRadius: 8, borderColor: "var(--color-border)", boxShadow: "0 1px 2px rgba(15,23,18,0.06)" }}
                   formatter={(value) => formatUsd(String(value))}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.key ?? ""}
                 />
-                <Bar dataKey="amount" fill={CHART_BAR_COLOR} radius={[0, 12, 12, 0]} />
+                <Bar dataKey="amount" fill={CHART_BAR_COLOR} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -519,32 +500,32 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
         <ChartCard
           title="Seller risk watchlist"
           action={
-            <Badge variant="outline" className="border-border bg-background px-3 py-1 text-muted-foreground">
+            <Badge variant="outline">
               Min {SELLER_VOLUME_THRESHOLD} calls
             </Badge>
           }
         >
-          <div className="grid gap-5">
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-foreground">Highest failure rates</p>
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <p className="text-[13px] font-semibold text-foreground">Highest failure rates</p>
               <RankedList rows={sellerHealthQ.data ?? []} mode="failure" onFocusSeller={onApplyFocus} />
             </div>
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-foreground">Slowest sellers</p>
+            <div className="space-y-2">
+              <p className="text-[13px] font-semibold text-foreground">Slowest sellers</p>
               <RankedList rows={sellerHealthQ.data ?? []} mode="latency" onFocusSeller={onApplyFocus} />
             </div>
           </div>
         </ChartCard>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <ChartCard title="Spend by agent">
-          {agentQ.isLoading && <Skeleton className="h-80 w-full rounded-2xl" />}
+          {agentQ.isLoading && <Skeleton className="h-60 w-full rounded-lg" />}
           {agentQ.data && agentQ.data.length === 0 && (
             <p className="py-20 text-center text-sm text-muted-foreground">No agent spend data.</p>
           )}
           {topAgents.length > 0 && (
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={240}>
               <BarChart
                 data={topAgents.map((row) => ({
                   ...row,
@@ -552,12 +533,12 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
                   shortKey: shortenLabel(row.key),
                 }))}
                 layout="vertical"
-                margin={{ top: 4, right: 24, left: 8, bottom: 4 }}
+                margin={{ top: 2, right: 8, left: 0, bottom: 2 }}
               >
-                <CartesianGrid horizontal={false} stroke="rgba(16,42,34,0.08)" />
+                <CartesianGrid horizontal={false} stroke={CHART_GRID_COLOR} />
                 <XAxis
                   type="number"
-                  tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+                  tick={VALUE_TICK}
                   tickFormatter={(value) => formatUsd(String(value))}
                   axisLine={false}
                   tickLine={false}
@@ -566,52 +547,56 @@ export function ChartsSection({ range, onApplyFocus }: ChartsSectionProps) {
                   type="category"
                   dataKey="shortKey"
                   width={140}
-                  tick={{ fontSize: 12, fill: "var(--color-foreground)" }}
+                  tick={AXIS_TICK}
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip
-                  cursor={{ fill: "rgba(23,107,77,0.06)" }}
+                  cursor={{ fill: CHART_CURSOR_COLOR }}
+                  contentStyle={{ borderRadius: 8, borderColor: "var(--color-border)", boxShadow: "0 1px 2px rgba(15,23,18,0.06)" }}
                   formatter={(value) => formatUsd(String(value))}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.key ?? ""}
                 />
-                <Bar dataKey="amount" fill={CHART_MUTED_BAR} radius={[0, 12, 12, 0]} />
+                <Bar dataKey="amount" fill={CHART_BAR_COLOR} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </ChartCard>
 
-        <ChartCard title="Spend over time" action={<Wallet className="size-4 text-primary" />}>
-          {dayQ.isLoading && <Skeleton className="h-80 w-full rounded-2xl" />}
+        <ChartCard title="Spend over time">
+          {dayQ.isLoading && <Skeleton className="h-60 w-full rounded-lg" />}
           {dayQ.data && dayQ.data.length === 0 && (
             <p className="py-20 text-center text-sm text-muted-foreground">No daily spend data.</p>
           )}
           {dayQ.data && dayQ.data.length > 0 && (
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={240}>
               <LineChart
                 data={dayQ.data.map((row) => ({ ...row, amount: Number(row.amount_usd) }))}
-                margin={{ top: 4, right: 16, left: 8, bottom: 4 }}
+                margin={{ top: 2, right: 8, left: 0, bottom: 2 }}
               >
-                <CartesianGrid stroke="rgba(16,42,34,0.08)" vertical={false} />
+                <CartesianGrid stroke={CHART_GRID_COLOR} vertical={false} />
                 <XAxis
                   dataKey="key"
-                  tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+                  tick={AXIS_TICK}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+                  tick={VALUE_TICK}
                   tickFormatter={(value) => formatUsd(String(value))}
                   axisLine={false}
                   tickLine={false}
                 />
-                <Tooltip formatter={(value) => formatUsd(String(value))} />
+                <Tooltip
+                  formatter={(value) => formatUsd(String(value))}
+                  contentStyle={{ borderRadius: 8, borderColor: "var(--color-border)", boxShadow: "0 1px 2px rgba(15,23,18,0.06)" }}
+                />
                 <Line
                   type="monotone"
                   dataKey="amount"
                   stroke={CHART_LINE_COLOR}
                   dot={false}
-                  strokeWidth={3}
+                  strokeWidth={2}
                 />
               </LineChart>
             </ResponsiveContainer>

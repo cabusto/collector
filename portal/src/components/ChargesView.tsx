@@ -55,11 +55,16 @@ export function ChargesView() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-[1.75rem] border border-border/80 bg-card/95 p-6 shadow-sm">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+    <div className="space-y-4">
+      <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
           Spend and seller performance
         </h1>
+        {activeFilters.length > 0 ? (
+          <Badge variant="outline" className="w-fit">
+            {activeFilters.length} active filter{activeFilters.length === 1 ? "" : "s"}
+          </Badge>
+        ) : null}
       </section>
 
       <FilterBar
@@ -79,23 +84,23 @@ export function ChargesView() {
 
       <ChartsSection range={filters.range} onApplyFocus={applyFocus} />
 
-      <section className="rounded-[1.75rem] border border-border/80 bg-card/95 p-5 shadow-sm">
-        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">Recent charges</h2>
+      <section className="rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,18,0.04)]">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-base font-semibold tracking-tight text-foreground">Recent charges</h2>
           {activeFilters.length > 0 ? (
-            <Button variant="outline" onClick={resetFilters}>
+            <Button variant="outline" size="sm" onClick={resetFilters}>
               Clear filters
             </Button>
           ) : null}
         </div>
 
         {activeFilters.length > 0 ? (
-          <div className="mb-4 flex flex-wrap gap-2">
+          <div className="mb-3 flex flex-wrap gap-2">
             {activeFilters.map((item) => (
               <Badge
                 key={item.label}
                 variant="outline"
-                className="border-border bg-background px-3 py-1 text-sm text-foreground"
+                className="border-border bg-muted text-foreground"
               >
                 {item.label}
               </Badge>

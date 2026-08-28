@@ -1,34 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f5f7f6;
-  --foreground: #102a22;
+  --background: #f3f4f2;
+  --foreground: #171a17;
   --card: #ffffff;
-  --card-foreground: #102a22;
+  --card-foreground: #171a17;
   --popover: #ffffff;
-  --popover-foreground: #102a22;
-  --primary: #176b4d;
-  --primary-foreground: #f7fcf9;
-  --secondary: #e8f3ee;
-  --secondary-foreground: #12553d;
-  --muted: #edf2ef;
-  --muted-foreground: #55736a;
-  --accent: #dcece3;
-  --accent-foreground: #12553d;
-  --border: #d8e2dd;
-  --input: #d8e2dd;
-  --ring: #176b4d;
-  --destructive: #b42318;
-  --destructive-foreground: #fff6f5;
-  --warning: #b7791f;
-  --success: #176b4d;
-  --chart-1: #176b4d;
-  --chart-2: #2d8a62;
-  --chart-3: #69b08a;
-  --chart-4: #93c9ad;
-  --chart-5: #c1dfcf;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.125rem;
+  --popover-foreground: #171a17;
+  --primary: #127a55;
+  --primary-foreground: #f7fbf9;
+  --secondary: #eef4f1;
+  --secondary-foreground: #1d4f3a;
+  --muted: #f6f7f5;
+  --muted-foreground: #66706a;
+  --accent: #e4efe9;
+  --accent-foreground: #1d4f3a;
+  --border: #dde2dd;
+  --input: #d6dcd6;
+  --ring: #127a55;
+  --destructive: #c7392f;
+  --destructive-foreground: #fff7f6;
+  --warning: #b87418;
+  --success: #2f7d57;
+  --chart-1: #127a55;
+  --chart-2: #127a55;
+  --chart-3: #127a55;
+  --chart-4: #127a55;
+  --chart-5: #127a55;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
 }
 
 @theme inline {
@@ -64,55 +64,25 @@
   --radius-lg: var(--radius-lg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #071510;
-    --foreground: #edf7f1;
-    --card: #0e2018;
-    --card-foreground: #edf7f1;
-    --popover: #0e2018;
-    --popover-foreground: #edf7f1;
-    --primary: #4eb387;
-    --primary-foreground: #03120c;
-    --secondary: #123024;
-    --secondary-foreground: #b9e1cd;
-    --muted: #10261d;
-    --muted-foreground: #8eb2a1;
-    --accent: #16392b;
-    --accent-foreground: #d8eee2;
-    --border: #224437;
-    --input: #224437;
-    --ring: #4eb387;
-    --destructive: #f97066;
-    --destructive-foreground: #220806;
-    --warning: #f0b04b;
-    --success: #4eb387;
-    --chart-1: #4eb387;
-    --chart-2: #6fc69f;
-    --chart-3: #93d8b6;
-    --chart-4: #b4e5cb;
-    --chart-5: #d4f1e0;
-  }
-}
-
 * {
   border-color: var(--border);
 }
 
 html {
-  background:
-    radial-gradient(circle at top left, rgba(23, 107, 77, 0.12), transparent 34%),
-    linear-gradient(180deg, #fbfcfb 0%, var(--background) 58%);
+  background: var(--background);
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
   min-height: 100vh;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--primary) 28%, white);
-  color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 18%, white);
+  color: #0f1512;
 }

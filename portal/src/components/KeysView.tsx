@@ -37,15 +37,15 @@ export function KeysView() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
+    <div className="max-w-5xl space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold">API Keys</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-[28px] font-semibold tracking-tight">API Keys</h1>
+          <p className="text-[13px] text-muted-foreground">
             Keys are used by middleware to ingest charges.
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)}>Generate key</Button>
+        <Button size="sm" onClick={() => setDialogOpen(true)}>Generate key</Button>
       </div>
 
       {error && (
@@ -67,35 +67,35 @@ export function KeysView() {
           ))}
         </div>
       ) : keys && keys.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-          <p className="text-sm">No active keys. Generate one to get started.</p>
+        <div className="rounded-lg border border-dashed border-border bg-card px-4 py-10 text-center text-muted-foreground">
+          <p className="text-[13px]">No active keys. Generate one to get started.</p>
         </div>
       ) : (
-        <div className="rounded-md border overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <table className="w-full min-w-[720px] text-[13px]">
             <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Name</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Prefix</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Created</th>
-                <th className="px-3 py-2 text-left font-medium text-muted-foreground">Last used</th>
-                <th className="px-3 py-2" />
+              <tr className="border-b border-border/80 bg-muted/70">
+                <th className="sticky top-0 bg-muted/90 px-3 py-2 text-left text-[12px] font-medium text-muted-foreground">Name</th>
+                <th className="sticky top-0 bg-muted/90 px-3 py-2 text-left text-[12px] font-medium text-muted-foreground">Prefix</th>
+                <th className="sticky top-0 bg-muted/90 px-3 py-2 text-left text-[12px] font-medium text-muted-foreground">Created</th>
+                <th className="sticky top-0 bg-muted/90 px-3 py-2 text-left text-[12px] font-medium text-muted-foreground">Last used</th>
+                <th className="sticky top-0 bg-muted/90 px-3 py-2" />
               </tr>
             </thead>
             <tbody>
               {keys?.map((key) => (
-                <tr key={key.id} className="border-b last:border-0">
-                  <td className="px-3 py-2 font-medium">{key.name || <span className="text-muted-foreground">—</span>}</td>
-                  <td className="px-3 py-2">
-                    <Badge variant="outline" className="font-mono text-xs">
+                <tr key={key.id} className="border-b border-border/60 last:border-0 hover:bg-muted/40">
+                  <td className="px-3 py-2.5 font-medium">{key.name || <span className="text-muted-foreground">—</span>}</td>
+                  <td className="px-3 py-2.5">
+                    <Badge variant="outline" className="font-mono tabular-nums text-[12px]">
                       {key.prefix}…
                     </Badge>
                   </td>
-                  <td className="px-3 py-2 text-muted-foreground text-xs">{formatDate(key.created_at)}</td>
-                  <td className="px-3 py-2 text-muted-foreground text-xs">
+                  <td className="px-3 py-2.5 text-[12px] text-muted-foreground">{formatDate(key.created_at)}</td>
+                  <td className="px-3 py-2.5 text-[12px] text-muted-foreground">
                     {key.last_used_at ? formatDate(key.last_used_at) : "Never"}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-3 py-2.5 text-right">
                     <Button
                       variant="ghost"
                       size="sm"
