@@ -9,7 +9,10 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
+import threading
 import time
+import traceback
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -98,8 +101,13 @@ def multi_sink(*sinks: Sink) -> Sink:
 		for sink in sinks:
 			try:
 				sink(rec)
-			except Exception:
-				pass
+			except Exception as exc:
+				sink_name = getattr(sink, "__name__", sink.__class__.__name__)
+				print(
+					f"[supertab] sink {sink_name} failed for record {rec.get('id')}: {exc}",
+					file=sys.stderr,
+				)
+				traceback.print_exc()
 
 	return _sink
 
@@ -275,16 +283,7 @@ def collector_sink(
 
 	endpoint = base_url.rstrip("/") + "/v1/charges"
 
-	def _sink(rec: dict[str, Any]) -> None:
-		if only_priced and not (rec.get("seller_ref") or rec.get("amount_usd")):
-			return
-
-		payload = _collector_payload(
-			rec,
-			agent_ref=agent_ref,
-			assistant_name=assistant_name,
-			default_metadata=default_metadata,
-		)
+	def _post(payload: dict[str, Any]) -> None:
 		request = urllib.request.Request(
 			endpoint,
 			data=json.dumps(payload).encode("utf-8"),
@@ -302,6 +301,18 @@ def collector_sink(
 			raise RuntimeError(
 				f"collector rejected event {payload['id']}: {exc.code} {detail}"
 			) from exc
+
+	def _sink(rec: dict[str, Any]) -> None:
+		if only_priced and not (rec.get("seller_ref") or rec.get("amount_usd")):
+			return
+
+		payload = _collector_payload(
+			rec,
+			agent_ref=agent_ref,
+			assistant_name=assistant_name,
+			default_metadata=default_metadata,
+		)
+		threading.Thread(target=_post, args=(payload,), daemon=True).start()
 
 	return _sink
 

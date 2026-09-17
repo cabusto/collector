@@ -33,7 +33,9 @@ ROOT = Path(os.environ.get("AGENT_LANGGRAPH_ROOT", os.getcwd())).resolve()
 load_dotenv(ROOT / ".env")
 
 DEFAULT_ASSISTANT = os.environ.get("AGENT_LANGGRAPH_ASSISTANT", "coding_agent")
-DEFAULT_URL = os.environ.get("AGENT_LANGGRAPH_BASE_URL")
+DEFAULT_URL = os.environ.get("AGENT_LANGGRAPH_BASE_URL") or os.environ.get(
+    "LANGGRAPH_BASE_URL"
+)
 USER_METADATA = {
     "employee": os.environ.get("AGENT_LANGGRAPH_EMPLOYEE", "jwarren"),
     "team": os.environ.get("AGENT_LANGGRAPH_TEAM", "eng"),
@@ -45,6 +47,7 @@ def usage() -> None:
     print("Usage: ./agent-langgraph-demo [--url URL] [--assistant NAME_OR_ID] [--list-assistants] [prompt text]")
     print("Run without prompt text for interactive mode.")
     print("You can pass either the raw base URL or the full LangSmith Studio URL to --url.")
+    print("If --url is omitted, the launcher uses AGENT_LANGGRAPH_BASE_URL or LANGGRAPH_BASE_URL.")
     print("If --assistant is omitted, the launcher uses AGENT_LANGGRAPH_ASSISTANT or 'coding_agent'.")
     print("Examples:")
     print("  ./agent-langgraph-demo --url 'https://...trycloudflare.com' 'say hello'")
@@ -93,7 +96,10 @@ def request_json(method: str, url: str, payload: dict | None = None) -> object:
         details = exc.read().decode("utf-8", "replace")
         raise SystemExit(f"HTTP {exc.code} from {url}: {details}") from exc
     except urllib.error.URLError as exc:
-        raise SystemExit(f"Could not connect to {url}: {exc}") from exc
+        raise SystemExit(
+            "Could not connect to "
+            f"{url}: {exc}. Check --url, AGENT_LANGGRAPH_BASE_URL, or LANGGRAPH_BASE_URL."
+        ) from exc
 
 
 def list_assistants(base_url: str) -> list[dict]:
@@ -200,7 +206,11 @@ def main() -> int:
 
     raw_url = args.url or DEFAULT_URL
     if not raw_url:
-        print("Missing LangGraph URL. Pass --url or set AGENT_LANGGRAPH_BASE_URL.", file=sys.stderr)
+        print(
+            "Missing LangGraph URL. Pass --url or set AGENT_LANGGRAPH_BASE_URL "
+            "or LANGGRAPH_BASE_URL.",
+            file=sys.stderr,
+        )
         return 1
 
     base_url, assistant_hint = normalize_url(raw_url)
