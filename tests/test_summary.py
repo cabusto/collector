@@ -138,3 +138,71 @@ def test_summary_includes_failure_and_latency_metrics(client):
     assert rows["slow-fail.com"]["avg_duration_ms"] == 1000.0
     assert rows["healthy.com"]["failure_count"] == 0
     assert rows["healthy.com"]["failure_rate"] == 0
+
+
+def test_summary_counts_free_and_failed_calls_without_amount(client):
+    client.post(
+        "/v1/charges",
+        json=[
+            {
+                **SAMPLE,
+                "id": "su_free_1",
+                "seller_ref": "free.example.com",
+                "amount_usd": None,
+                "currency": None,
+            },
+            {
+                **SAMPLE,
+                "id": "su_free_2",
+                "seller_ref": "free.example.com",
+                "status": "failed",
+                "amount_usd": None,
+                "http_status": 504,
+                "currency": None,
+            },
+        ],
+        headers=AUTH1,
+    )
+
+    rows = {
+        row["key"]: row
+        for row in client.get(
+            "/v1/charges/summary?group_by=seller_ref", headers=AUTH1
+        ).json()
+    }
+
+    assert rows["free.example.com"]["count"] == 2
+    assert rows["free.example.com"]["failure_count"] == 1
+    assert rows["free.example.com"]["failure_rate"] == 0.5
+    assert rows["free.example.com"]["amount_usd"] == "0.00000000"
+
+
+def test_summary_by_status_preserves_zero_amount_for_null_priced_rows(client):
+    client.post(
+        "/v1/charges",
+        json=[
+            {**SAMPLE, "id": "su_status_free", "amount_usd": None, "currency": None},
+            {
+                **SAMPLE,
+                "id": "su_status_failed",
+                "status": "failed",
+                "amount_usd": None,
+                "currency": None,
+            },
+        ],
+        headers=AUTH1,
+    )
+
+    rows = {
+        row["key"]: row
+        for row in client.get(
+            "/v1/charges/summary?group_by=status", headers=AUTH1
+        ).json()
+    }
+
+    assert rows["recorded"]["count"] == 1
+    assert rows["recorded"]["failure_count"] == 0
+    assert rows["recorded"]["amount_usd"] == "0.00000000"
+    assert rows["failed"]["count"] == 1
+    assert rows["failed"]["failure_count"] == 1
+    assert rows["failed"]["amount_usd"] == "0.00000000"

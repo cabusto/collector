@@ -43,3 +43,45 @@ def test_unknown_field_stored_in_metadata(client):
     r = client.get("/v1/charges", headers=AUTH1)
     item = r.json()["items"][0]
     assert item["metadata"]["my_custom_key"] == "my_value"
+
+
+def test_post_free_call_roundtrip(client):
+    free_call = {
+        **SAMPLE,
+        "id": "chg_free",
+        "amount_usd": None,
+        "currency": None,
+    }
+
+    r = client.post("/v1/charges", json=free_call, headers=AUTH1)
+    assert r.status_code == 200
+
+    items = client.get("/v1/charges", headers=AUTH1).json()["items"]
+    assert len(items) == 1
+    item = items[0]
+    assert item["id"] == "chg_free"
+    assert item["status"] == "recorded"
+    assert item["amount_usd"] is None
+    assert item["currency"] == "USD"
+
+
+def test_post_failed_call_without_amount_roundtrip(client):
+    failed_call = {
+        **SAMPLE,
+        "id": "chg_failed",
+        "status": "failed",
+        "amount_usd": None,
+        "http_status": 503,
+        "currency": None,
+    }
+
+    r = client.post("/v1/charges", json=failed_call, headers=AUTH1)
+    assert r.status_code == 200
+
+    items = client.get("/v1/charges", headers=AUTH1).json()["items"]
+    assert len(items) == 1
+    item = items[0]
+    assert item["id"] == "chg_failed"
+    assert item["status"] == "failed"
+    assert item["amount_usd"] is None
+    assert item["http_status"] == 503

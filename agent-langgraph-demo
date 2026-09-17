@@ -1,0 +1,249 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+venv_python="$script_dir/.venv/bin/python3"
+
+if [[ ! -x "$venv_python" ]]; then
+  echo "Missing virtualenv interpreter at $venv_python" >&2
+  echo "Create it first, then install the repo dependencies into that environment." >&2
+  exit 1
+fi
+
+python_source="$(cat <<'PY'
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
+from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+
+    def load_dotenv(*args, **kwargs):
+        return False
+
+
+ROOT = Path(os.environ.get("AGENT_LANGGRAPH_ROOT", os.getcwd())).resolve()
+load_dotenv(ROOT / ".env")
+
+DEFAULT_ASSISTANT = os.environ.get("AGENT_LANGGRAPH_ASSISTANT", "coding_agent")
+DEFAULT_URL = os.environ.get("AGENT_LANGGRAPH_BASE_URL")
+USER_METADATA = {
+    "employee": os.environ.get("AGENT_LANGGRAPH_EMPLOYEE", "jwarren"),
+    "team": os.environ.get("AGENT_LANGGRAPH_TEAM", "eng"),
+}
+UUID_NAMESPACE = uuid.uuid4().hex
+
+
+def usage() -> None:
+    print("Usage: ./agent-langgraph-demo [--url URL] [--assistant NAME_OR_ID] [--list-assistants] [prompt text]")
+    print("Run without prompt text for interactive mode.")
+    print("You can pass either the raw base URL or the full LangSmith Studio URL to --url.")
+    print("If --assistant is omitted, the launcher uses AGENT_LANGGRAPH_ASSISTANT or 'coding_agent'.")
+    print("Examples:")
+    print("  ./agent-langgraph-demo --url 'https://...trycloudflare.com' 'say hello'")
+    print("  ./agent-langgraph-demo --url 'https://smith.langchain.com/...&baseUrl=https%3A%2F%2F...&assistantId=...' ")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--url")
+    parser.add_argument("--assistant")
+    parser.add_argument("--list-assistants", action="store_true")
+    parser.add_argument("-h", "--help", action="store_true")
+    parser.add_argument("prompt", nargs=argparse.REMAINDER)
+    return parser.parse_args()
+
+
+def normalize_url(url: str) -> tuple[str, str | None]:
+    parsed = urllib.parse.urlparse(url)
+    query = urllib.parse.parse_qs(parsed.query)
+    base_url = query.get("baseUrl", [url])[0].rstrip("/")
+    assistant_hint = query.get("assistantId", [None])[0]
+    return base_url, assistant_hint
+
+
+def is_uuid(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+        return True
+    except Exception:
+        return False
+
+
+def request_json(method: str, url: str, payload: dict | None = None) -> object:
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=body,
+        method=method,
+        headers={"Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            data = response.read().decode("utf-8")
+            return json.loads(data) if data else None
+    except urllib.error.HTTPError as exc:
+        details = exc.read().decode("utf-8", "replace")
+        raise SystemExit(f"HTTP {exc.code} from {url}: {details}") from exc
+    except urllib.error.URLError as exc:
+        raise SystemExit(f"Could not connect to {url}: {exc}") from exc
+
+
+def list_assistants(base_url: str) -> list[dict]:
+    data = request_json("POST", f"{base_url}/assistants/search", {})
+    if not isinstance(data, list):
+        raise SystemExit(f"Unexpected assistants response: {data!r}")
+    return data
+
+
+def resolve_assistant(base_url: str, assistant_value: str | None, url_hint: str | None) -> str:
+    if assistant_value and is_uuid(assistant_value):
+        return assistant_value
+    if not assistant_value and url_hint and is_uuid(url_hint):
+        return url_hint
+
+    target = assistant_value or url_hint or DEFAULT_ASSISTANT
+    assistants = list_assistants(base_url)
+    for assistant in assistants:
+        if target in {
+            assistant.get("assistant_id"),
+            assistant.get("name"),
+            assistant.get("graph_id"),
+        }:
+            return str(assistant["assistant_id"])
+
+    options = ", ".join(
+        f"{assistant.get('name') or assistant.get('graph_id')} ({assistant.get('assistant_id')})"
+        for assistant in assistants
+    )
+    raise SystemExit(f"Could not resolve assistant '{target}'. Available assistants: {options}")
+
+
+def create_thread(base_url: str) -> str:
+    data = request_json("POST", f"{base_url}/threads", {"metadata": USER_METADATA})
+    if not isinstance(data, dict) or "thread_id" not in data:
+        raise SystemExit(f"Unexpected thread response: {data!r}")
+    return str(data["thread_id"])
+
+
+def extract_text(value: object) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        parts: list[str] = []
+        for item in value:
+            if isinstance(item, str):
+                parts.append(item)
+            elif isinstance(item, dict):
+                text = item.get("text") or item.get("content")
+                if isinstance(text, str):
+                    parts.append(text)
+        return "\n".join(part for part in parts if part)
+    if isinstance(value, dict):
+        text = value.get("text") or value.get("content")
+        if isinstance(text, str):
+            return text
+    return json.dumps(value, indent=2)
+
+
+def print_result(result: object) -> None:
+    if not isinstance(result, dict):
+        print(result)
+        return
+
+    messages = result.get("messages")
+    if isinstance(messages, list) and messages:
+        last = messages[-1]
+        if isinstance(last, dict):
+            content = last.get("content")
+            if content is not None:
+                print(extract_text(content))
+                return
+
+    output = result.get("output")
+    if output is not None:
+        print(extract_text(output))
+        return
+
+    print(json.dumps(result, indent=2))
+
+
+def run_prompt(base_url: str, assistant_id: str, thread_id: str, prompt: str) -> None:
+    payload = {
+        "assistant_id": assistant_id,
+        "input": {
+            "messages": [
+                {
+                    "role": "human",
+                    "content": prompt,
+                }
+            ]
+        },
+        "metadata": USER_METADATA,
+    }
+    result = request_json("POST", f"{base_url}/threads/{thread_id}/runs/wait", payload)
+    print_result(result)
+
+
+def main() -> int:
+    args = parse_args()
+    if args.help:
+        usage()
+        return 0
+
+    raw_url = args.url or DEFAULT_URL
+    if not raw_url:
+        print("Missing LangGraph URL. Pass --url or set AGENT_LANGGRAPH_BASE_URL.", file=sys.stderr)
+        return 1
+
+    base_url, assistant_hint = normalize_url(raw_url)
+    if args.list_assistants:
+        for assistant in list_assistants(base_url):
+            print(
+                f"{assistant.get('name')}\tgraph={assistant.get('graph_id')}\tid={assistant.get('assistant_id')}"
+            )
+        return 0
+
+    assistant_id = resolve_assistant(base_url, args.assistant, assistant_hint)
+    thread_id = create_thread(base_url)
+
+    if args.prompt:
+        run_prompt(base_url, assistant_id, thread_id, " ".join(args.prompt))
+        return 0
+
+    print(f"Connected to {base_url}")
+    print(f"Assistant: {assistant_id}")
+    print(f"Thread: {thread_id}")
+    print("Type a coding task, or 'exit' to quit.\n")
+
+    while True:
+        try:
+            user_input = input("you> ").strip()
+        except EOFError:
+            print()
+            return 0
+
+        if user_input.lower() in {"exit", "quit"}:
+            return 0
+        if not user_input:
+            continue
+
+        print()
+        print("agent>")
+        run_prompt(base_url, assistant_id, thread_id, user_input)
+        print()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+PY
+)"
+
+AGENT_LANGGRAPH_ROOT="$script_dir" exec "$venv_python" -c "$python_source" "$@"

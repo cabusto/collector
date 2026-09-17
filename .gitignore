@@ -11,3 +11,4 @@ dist/
 .pytest_cache/
 .vercel
 supertab-portal-build-spec.md
+portal/email-login-plan.md

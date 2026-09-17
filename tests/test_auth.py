@@ -1,3 +1,5 @@
+import collector.auth as auth_module
+
 from tests.conftest import AUTH1, AUTH2, SAMPLE
 
 
@@ -53,3 +55,21 @@ def test_account_isolation_on_write(client):
 
     items = client.get("/v1/charges", headers=AUTH1).json()["items"]
     assert items[0]["tool"] == SAMPLE["tool"]
+
+
+def test_settings_backed_plaintext_key_works_without_process_env(client, monkeypatch):
+    monkeypatch.setenv("COLLECTOR_API_KEYS", "")
+    monkeypatch.setattr(auth_module.settings, "COLLECTOR_API_KEYS", "dotkey:acctdot")
+
+    response = client.post(
+        "/v1/charges",
+        json={**SAMPLE, "id": "chg_settings_key"},
+        headers={"Authorization": "Bearer dotkey"},
+    )
+
+    assert response.status_code == 200
+    items = client.get(
+        "/v1/charges",
+        headers={"Authorization": "Bearer dotkey"},
+    ).json()["items"]
+    assert items[0]["id"] == "chg_settings_key"

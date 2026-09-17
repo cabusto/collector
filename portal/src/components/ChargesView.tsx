@@ -57,9 +57,14 @@ export function ChargesView() {
   return (
     <div className="space-y-4">
       <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
-          Spend and seller performance
-        </h1>
+        <div className="space-y-1">
+          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
+            API calls and seller performance
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Recent charges includes priced, free, and failed API calls.
+          </p>
+        </div>
         {activeFilters.length > 0 ? (
           <Badge variant="outline" className="w-fit">
             {activeFilters.length} active filter{activeFilters.length === 1 ? "" : "s"}
@@ -86,7 +91,7 @@ export function ChargesView() {
 
       <section className="rounded-lg border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,18,0.04)]">
         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-base font-semibold tracking-tight text-foreground">Recent charges</h2>
+          <h2 className="text-base font-semibold tracking-tight text-foreground">Recent API calls</h2>
           {activeFilters.length > 0 ? (
             <Button variant="outline" size="sm" onClick={resetFilters}>
               Clear filters

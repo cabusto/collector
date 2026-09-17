@@ -91,3 +91,47 @@ def test_pagination_cursor(client):
     ids2 = {i["id"] for i in r2["items"]}
     assert not ids1 & ids2
     assert len(ids1 | ids2) == 5
+
+
+def test_list_includes_free_and_failed_calls(client):
+    client.post(
+        "/v1/charges",
+        json=[
+            {**SAMPLE, "id": "q_mix_priced"},
+            {**SAMPLE, "id": "q_mix_free", "amount_usd": None, "currency": None},
+            {
+                **SAMPLE,
+                "id": "q_mix_failed",
+                "status": "failed",
+                "amount_usd": None,
+                "http_status": 500,
+                "currency": None,
+            },
+        ],
+        headers=AUTH1,
+    )
+
+    items = client.get("/v1/charges", headers=AUTH1).json()["items"]
+    by_id = {item["id"]: item for item in items}
+
+    assert set(by_id) == {"q_mix_priced", "q_mix_free", "q_mix_failed"}
+    assert by_id["q_mix_free"]["status"] == "recorded"
+    assert by_id["q_mix_free"]["amount_usd"] is None
+    assert by_id["q_mix_failed"]["status"] == "failed"
+    assert by_id["q_mix_failed"]["amount_usd"] is None
+
+
+def test_filter_by_failed_status_with_null_amount(client):
+    client.post(
+        "/v1/charges",
+        json=[
+            {**SAMPLE, "id": "q_failed_1", "status": "failed", "amount_usd": None},
+            {**SAMPLE, "id": "q_recorded_1", "status": "recorded", "amount_usd": None},
+        ],
+        headers=AUTH1,
+    )
+
+    items = client.get("/v1/charges?status=failed", headers=AUTH1).json()["items"]
+    assert len(items) == 1
+    assert items[0]["id"] == "q_failed_1"
+    assert items[0]["amount_usd"] is None

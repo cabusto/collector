@@ -5,6 +5,26 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function isChargeFailure(status: string | null | undefined): boolean {
+  return !!status && status !== "recorded";
+}
+
+export function isFreeCharge(
+  amount: string | null | undefined,
+  status: string | null | undefined
+): boolean {
+  return !isChargeFailure(status) && !amount;
+}
+
+export function formatChargeAmount(
+  amount: string | null | undefined,
+  status: string | null | undefined
+): string {
+  if (isFreeCharge(amount, status)) return "Free";
+  if (!amount) return "—";
+  return formatUsd(amount);
+}
+
 export function formatUsd(value: string | null | undefined): string {
   if (!value) return "$0.00";
   return new Intl.NumberFormat("en-US", {

@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { formatUsd, formatDate } from "@/lib/utils";
+import { formatChargeAmount, formatDate, isFreeCharge } from "@/lib/utils";
 import type { Charge } from "@/types/collector";
 
 const col = createColumnHelper<Charge>();
@@ -42,11 +42,21 @@ const columns = [
   }),
   col.accessor("status", {
     header: "Status",
-    cell: (i) => (
-      <Badge variant="outline" className={STATUS_STYLES[i.getValue()] ?? "border-border bg-muted text-foreground"}>
-        {i.getValue()}
-      </Badge>
-    ),
+    cell: (i) => {
+      const charge = i.row.original;
+      const isFree = isFreeCharge(charge.amount_usd, charge.status);
+
+      return (
+        <div className="flex justify-end sm:justify-start">
+          <Badge
+            variant="outline"
+            className={STATUS_STYLES[i.getValue()] ?? "border-border bg-muted text-foreground"}
+          >
+            {isFree ? "recorded · free" : i.getValue()}
+          </Badge>
+        </div>
+      );
+    },
   }),
   col.accessor("http_status", {
     header: "HTTP",
@@ -56,7 +66,11 @@ const columns = [
   }),
   col.accessor("amount_usd", {
     header: "Amount",
-    cell: (i) => <span className="font-mono tabular-nums text-[12px]">{formatUsd(i.getValue())}</span>,
+    cell: (i) => (
+      <span className="font-mono tabular-nums text-[12px]">
+        {formatChargeAmount(i.getValue(), i.row.original.status)}
+      </span>
+    ),
   }),
   col.accessor("duration_ms", {
     header: "ms",
@@ -112,7 +126,7 @@ export function ChargesTable({
   if (!isLoading && charges.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-        <p className="text-sm">No charges found for the selected filters.</p>
+        <p className="text-sm">No API calls found for the selected filters.</p>
       </div>
     );
   }
@@ -120,7 +134,7 @@ export function ChargesTable({
   return (
     <div className="space-y-3">
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full min-w-[880px] text-[13px]">
+        <table className="w-full min-w-220 text-[13px]">
           <thead>
             {table.getHeaderGroups().map((hg) => (
               <tr key={hg.id} className="border-b border-border/80 bg-muted/70">

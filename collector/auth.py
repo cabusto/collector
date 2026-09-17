@@ -8,6 +8,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session, select
 
+from .config import settings
 from .db import get_session
 from .models import ApiKey
 
@@ -36,7 +37,7 @@ def resolve_account(
     token = creds.credentials
 
     # Env-seeded plaintext keys take priority (backward compat for existing middleware)
-    for pair in filter(None, os.environ.get("COLLECTOR_API_KEYS", "").split(",")):
+    for pair in filter(None, settings.COLLECTOR_API_KEYS.split(",")):
         k, _, acct = pair.partition(":")
         if k == token:
             return acct

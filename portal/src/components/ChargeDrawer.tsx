@@ -7,7 +7,12 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
-import { formatDate, formatUsd } from "@/lib/utils";
+import {
+  formatChargeAmount,
+  formatDate,
+  isChargeFailure,
+  isFreeCharge,
+} from "@/lib/utils";
 import type { Charge } from "@/types/collector";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -55,7 +60,8 @@ interface ChargeDrawerProps {
 
 export function ChargeDrawer({ charge, onClose }: ChargeDrawerProps) {
   const metadataEntries = Object.entries(charge?.metadata ?? {});
-  const isFailure = charge?.status && charge.status !== "recorded";
+  const isFailure = isChargeFailure(charge?.status);
+  const isFree = isFreeCharge(charge?.amount_usd, charge?.status);
   const isSlow = (charge?.duration_ms ?? 0) >= 1000;
 
   return (
@@ -66,6 +72,7 @@ export function ChargeDrawer({ charge, onClose }: ChargeDrawerProps) {
             {charge?.status ? (
               <Badge variant="outline" className={STATUS_STYLES[charge.status] ?? "border-border bg-muted text-foreground"}>{charge.status}</Badge>
             ) : null}
+            {isFree ? <Badge variant="outline">Free</Badge> : null}
             {isFailure ? <Badge variant="destructive">Issue</Badge> : null}
             {isSlow ? <Badge variant="outline">Slow</Badge> : null}
           </div>
@@ -85,7 +92,11 @@ export function ChargeDrawer({ charge, onClose }: ChargeDrawerProps) {
 
           <Section title="Spend and routing">
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-              <DetailBlock label="Amount" value={formatUsd(charge?.amount_usd)} numeric />
+              <DetailBlock
+                label="Amount"
+                value={formatChargeAmount(charge?.amount_usd, charge?.status)}
+                numeric
+              />
               <DetailBlock label="Currency" value={charge?.currency ?? "USD"} />
               <DetailBlock label="Resource" value={charge?.resource ?? "Not captured"} />
               <DetailBlock label="Rail" value={charge?.rail ?? "Not captured"} />
